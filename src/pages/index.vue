@@ -104,9 +104,7 @@ function getBlockClass(block: BlockState) {
       : numberColors[block.adjacentMines]
 }
 function expendZero(block:BlockState){
-  if(){
 
-  }
 }
 </script>
 
