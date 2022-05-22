@@ -53,17 +53,14 @@ const directions = [
 function updateNumbers() {
   state.forEach((raw, y) => {
     raw.forEach((block, x) => {
-      if (block.mine) {
+      if (block.mine)
         return
-      }
-      directions.forEach(([dx, dy]) => {
-        const x2 = x + dx
-        const y2 = y + dy
-        if (x2 < 0 || y2 < 0 || x2 >= WIDTH || y2 >= HEIGHT)
-          return
-        if (state[y2][x2].mine)
+      getSiblings(block).forEach((a)=>{
+        if(a?.mine){
           block.adjacentMines++
+        }
       })
+
     })
   })
 }
@@ -82,6 +79,7 @@ function OnClick(block: BlockState) {
   if(block.mine){
     alert("BOOOOM!!!")
   }
+  expendZero(block)
 }
 
 const numberColors = [
@@ -104,7 +102,23 @@ function getBlockClass(block: BlockState) {
       : numberColors[block.adjacentMines]
 }
 function expendZero(block:BlockState){
-
+  if(block.adjacentMines || block.revealed){
+    return
+  }
+  getSiblings(block).forEach((b)=>{
+    b.revealed=true
+    expendZero(block)
+  })
+}
+function getSiblings(block:BlockState) {
+  return directions.map(([dx, dy]) => {
+    const x2 = block.x + dx
+    const y2 = block.y + dy
+    if (x2 < 0 || y2 < 0 || x2 >= WIDTH || y2 >= HEIGHT)
+      return undefined
+    return state[y2][x2]
+  })
+  .filter(Boolean) as BlockState[]
 }
 </script>
 
