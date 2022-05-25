@@ -8,8 +8,8 @@ interface BlockState {
   adjacentMines: number //周围炸弹数量
 }
 
-const WIDTH = 10
-const HEIGHT = 10
+const WIDTH = 3
+const HEIGHT = 3
 const state = reactive(Array.from({length: HEIGHT}, (_, y) =>
     Array.from({length: WIDTH},
         (_, x): BlockState => ({
@@ -67,9 +67,12 @@ function updateNumbers() {
 }
 //第一次点击
 let mineGenerated=false
-const dev=true
+
 
 function OnClick(block: BlockState) {
+  if(block.flagged){
+    return
+  }
   if(!mineGenerated){
     generateMines(block)
     mineGenerated=true
@@ -79,11 +82,26 @@ function OnClick(block: BlockState) {
     block.revealed = true
   }
   if(block.mine){
+    for (const row of state) {
+      for (const b of row) {
+        if(b.mine){
+          b.revealed=true
+        }
+      }
+    }
     alert("BOOOOM!!!")
+    return;
   }
+  checkGamesState()
   expendZero(block)
 }
+function OnClickRight(block:BlockState) {
+  if(!block.revealed){
+    block.flagged=!block.flagged
+  }
 
+  checkGamesState()
+}
 const numberColors = [
   'text-transparent',
   'text-blue-500',
@@ -96,8 +114,11 @@ const numberColors = [
 ]
 
 function getBlockClass(block: BlockState) {
-  if(!block.revealed){
+  if(block.flagged){
     return 'bg-gray-500/10'
+  }
+  if(!block.revealed){
+    return 'bg-gray-500/10 hover:bg-gray/10'
   }
   return block.mine ?
       'text-red'
@@ -111,7 +132,7 @@ function expendZero(block:BlockState){
   }
 
   getSiblings(block).forEach((b)=>{
-    if( !b.revealed){
+    if( !b.revealed&&!b.flagged){
       b.revealed=true
       expendZero(b)
     }
@@ -119,7 +140,6 @@ function expendZero(block:BlockState){
 }
 //计算周围8个格子
 function getSiblings(block:BlockState) {
-  console.log("触发")
   return directions.map(([dx, dy]) => {
     const x2 = block.x + dx
     const y2 = block.y + dy
@@ -128,6 +148,21 @@ function getSiblings(block:BlockState) {
     return state[y2][x2]
   })
   .filter(Boolean) as BlockState[]
+}
+function checkGamesState(){
+  if(!mineGenerated){
+    return
+  }
+  const temp=state.flat()
+  if(temp.every((item)=>item.revealed||item.flagged)){
+    if(temp.some((item)=>item.flagged&&!item.mine)){
+      alert("You cheat!")
+    }
+    else {
+      alert("You win!")
+      console.log(Object.assign({}, state))
+    }
+  }
 }
 </script>
 
@@ -145,19 +180,22 @@ function getSiblings(block:BlockState) {
           :key="x"
           flex="~"
           items-center justify-center m="0.5"
-          hover="bg-gray/10"
           w-8
           h-8
           border="1 gray-400/10"
           :class="getBlockClass(item)"
-          @click="OnClick(item)">
-          <block v-if="item.revealed">
+          @click="OnClick(item)"
+          @contextmenu.prevent="OnClickRight(item)"
+      >
+          <template v-if="item.flagged">
+            <div i-mdi-flag></div>
+          </template>
+          <template v-if="item.revealed">
             <div v-if="item.mine" i-mdi-mine/>
             <div v-else>
               {{ item.adjacentMines }}
             </div>
-          </block>
-
+          </template>
       </button>
     </div>
   </div>
