@@ -20,10 +20,11 @@ const state = reactive(Array.from({length: HEIGHT}, (_, y) =>
         })
     )
 ))
-
+//生成炸弹
 function generateMines(initial:BlockState) {
   for (const row of state) {
     for (const block of row) {
+
       if(Math.abs(initial.x-block.x)<1&&Math.abs(initial.y-block.y)<2){
         console.log(initial.x,block.x)
         continue
@@ -32,7 +33,7 @@ function generateMines(initial:BlockState) {
         console.log(initial.y,block.y)
         continue
       }
-      block.mine = Math.random() < 0.2
+      block.mine = Math.random() < 0.1
     }
   }
 
@@ -67,6 +68,7 @@ function updateNumbers() {
 //第一次点击
 let mineGenerated=false
 const dev=true
+
 function OnClick(block: BlockState) {
   if(!mineGenerated){
     generateMines(block)
@@ -101,16 +103,23 @@ function getBlockClass(block: BlockState) {
       'text-red'
       : numberColors[block.adjacentMines]
 }
+//只有翻开为0的格子触发连锁
 function expendZero(block:BlockState){
-  if(block.adjacentMines || block.revealed){
+  //如果有数字 ||已经翻开 不做处理
+  if(block.adjacentMines){
     return
   }
+
   getSiblings(block).forEach((b)=>{
-    b.revealed=true
-    expendZero(block)
+    if( !b.revealed){
+      b.revealed=true
+      expendZero(b)
+    }
   })
 }
+//计算周围8个格子
 function getSiblings(block:BlockState) {
+  console.log("触发")
   return directions.map(([dx, dy]) => {
     const x2 = block.x + dx
     const y2 = block.y + dy
